@@ -1,7 +1,6 @@
 import { type FC, useState } from 'react'
 import { ResponsiveChordCanvas } from '@nivo/chord'
 import tw from 'tailwind-styled-components'
-import { colors, despisedColors } from '../../constants'
 
 interface ChordChartProps {
   data: number[][]
@@ -12,24 +11,41 @@ interface ChordChartProps {
   inactiveRibbonOpacity?: number
 }
 
+const legendItems = [
+  { label: 'RICE Majors', color: '#0090FF' },
+  { label: 'Industry Area', color: '#E74D94' },
+]
+
 const InnerCircleContainer = tw.div`
   inner-circle-container
   absolute
   rounded-full
-  bg-red-500
-  h-52
-  w-52
+  h-72
+  w-72
   p-12
   left-1/2
   top-1/2
+  backdrop-blur-[8px]
   -translate-y-1/2
   -translate-x-1/2
   flex
   items-center
   justify-center
-  bg-[#50555a]
-  text-[#9CA1AB]
+  bg-[#50555aaa]
+  text-[#9BA0AB]
   font-light
+`
+
+const CustomTooltipContainer = tw.div`
+  custom-tooltip-container
+  flex
+  items-center
+  space-x-2
+  bg-white
+  border
+  border-black/20
+  p-1
+  rounded-md
 `
 
 const ChordChart: FC<ChordChartProps> = (props) => {
@@ -55,50 +71,57 @@ const ChordChart: FC<ChordChartProps> = (props) => {
 
   return (
     <>
-      <div className="chord-chart-container w-full h-[640px] relative">
+      <div className="chord-chart-container w-full h-full relative">
+        <div className="legend-container flex flex-col absolute top-20 space-y-1.5">
+          {
+            legendItems.map((item, index) => (
+              <div key={index}
+                   className="legend-item flex items-center space-x-2">
+                <div className="square-container h-4 w-4 rounded-sm" style={{ backgroundColor: item.color }} />
+                <p className="text-xs text-white">
+                  { item.label }
+                </p>
+              </div>
+            ))
+          }
+
+        </div>
         <ResponsiveChordCanvas data={data}
                                keys={keys}
                                labelRotation={-90}
                                labelTextColor="white"
-                               labelOffset={4}
-                               theme={{ labels: { text: { fontSize: 9 }}}}
+                               labelOffset={8}
+                               theme={{ labels: { text: { fontSize: 12 }}}}
                                inactiveRibbonOpacity={inactiveRibbonOpacity}
                                colors={(arc) => {
-                                 if (despisedKeys.includes(arc.id)) {
-                                   const { length } = despisedColors
-                                   const idx = Math.floor(Math.random() * (length - 1))
-                                   return despisedColors[idx]
-                                 }
-                                 return colors[arc.index]
+                                 if (despisedKeys.includes(arc.id)) return '#E74D94'
+                                 return '#0066FF'
                                }}
                                innerRadiusRatio={0.92}
                                ribbonOpacity={0}
-                               label={(l) => {
-                                 if (l.id.length > 20) return `${l.id.substring(0, 19)}...`
-                                 return l.id
-                               }}
                                arcTooltip={({ arc }) => {
                                  const index = keys.indexOf(arc.id)
                                  const count = data[index].reduce((prev, cur) => prev + cur, 0)
 
                                  return (
-                                   <div
-                                     className="custom-tooltip-container flex items-center space-x-2 bg-white border border-black/20 p-1 rounded-md">
+                                   <CustomTooltipContainer>
                                      <div className="square-container h-4 w-4" style={{ background: arc.color }}/>
                                      <p className="whitespace-nowrap">{ arc.id }: <strong>{ count }</strong></p>
-                                   </div>
+                                   </CustomTooltipContainer>
                                  )
                                }}
                                onArcMouseEnter={(args) => setTimeout(() => handleArcMouseEnter(args), 0)}
                                onArcMouseLeave={(args) => setTimeout(() => handleArcMouseLeave(args), 0)}
-                               margin={{ top: 130, bottom: 130 }}
-                               padAngle={0.04}/>
+                               margin={{ top: 140, bottom: 140 }}
+                               padAngle={0.04} />
 
         <InnerCircleContainer className={`${showInnerCircle ? 'opacity-100' : 'opacity-20'}`}>
           {
             showInnerCircle && (
               <p className="text-center leading-none text-sm">
-                Move your mouse to check details
+                Move your <br/>
+                mouse to check <br/>
+                details
               </p>
             )
           }

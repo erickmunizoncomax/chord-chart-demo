@@ -1,17 +1,16 @@
-import { HamburgerMenu, Messages3, Notification, Send2 } from 'iconsax-reactjs'
+import { ArrowSwapHorizontal, Send2 } from 'iconsax-reactjs'
 import ChordChart from '../../components/ChordChart'
 import riceWhiteLogo from '../../assets/img/rice-university-white-logo.png'
-import riceBlueLogo from '../../assets/img/rice-university-blue-logo.png'
+import riceMainLogo from '../../assets/img/rice-university-main-logo.png'
 import mainBackground from '../../assets/img/main-background.png'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Select, SelectOption } from '../../components/Select'
 import HomeKpi from '../../components/HomeKpi'
-import spainFlag from '../../assets/img/spains-flag.png'
-import { buildGenericChordData } from '../../utils'
+import { buildGenericChordData, formatCurrency } from '../../utils'
 import PostDocDrillDrawerContent from '../../components/PostDocDrillDrawerContent'
 import PostDocSankeyChart from '../../components/PostDocSankeyChart'
 import AskToAiFrame from '../../components/AskToAiFrame'
-import GenericBarStackChart, { type BarStackChartRef } from "../../components/GenericBarStackChart"
+import riceOwl from '../../assets/img/rice-owl.png'
 
 const ViewType = {
   CHORD_CHART: 'Chord',
@@ -28,19 +27,17 @@ const PostDocPage = () => {
   const [despisedKeys, setDespisedKeys] = useState<string[]>([])
 
   // Filters
-  const [year, setYear] = useState<string>('2023')
-  const [school, setSchool] = useState<string>('School of Music')
+  const [year, setYear] = useState<string>('2024')
+  const [school, setSchool] = useState<string>('School of Natural Sciences')
   const [degree, setDegree] = useState<string>('')
   const [major, setMajor] = useState<string>('')
   const [sex, setSex] = useState<string>('')
   const [employerIndustry, setEmployerIndustry] = useState<string>('')
 
-  const [drillDownDimensionField, setDrillDownDimensionField] = useState<string>()
+  const [drillDownDimensionField, _] = useState<string>()
   const [drillDownContentOpened, setSetDrillDownContentOpened] = useState<boolean>(false)
   const [askToAiFrameOpened, setAskToAiFrameOpened] = useState<boolean>(false)
   const [viewType, setViewType] = useState<ViewType>(ViewType.CHORD_CHART)
-
-  const stackBarChartRef = useRef<BarStackChartRef>(null)
 
   const loadData = (datasource: any[], filters: any) => {
     const filteredData = datasource.filter((item) => {
@@ -135,45 +132,59 @@ const PostDocPage = () => {
   useMemo(() => {
     const load = async () => {
       const response = await fetch('/output-new.json').then(r => r.json())
-      response.forEach((item: any) => !item['Detailed Industry'] ? item['Detailed Industry'] = 'Undetermined' : null)
-      setSource(response)
+      const filtered = response.filter((item: any) => !!item['Detailed Industry'])
+      setSource(filtered)
     }
     load()
   }, [])
 
-  const stackedBarChartNode = useMemo(() => {
-    return (
-      <GenericBarStackChart ref={stackBarChartRef}
-                            data={filteredSource}
-                            originField="Major"
-                            destinationField="Detailed Industry"
-                            onDrillDownClick={(l) => {
-                             setDrillDownDimensionField(l)
-                             setSetDrillDownContentOpened(true)
-                           }}
-      />
-    )
-  }, [filteredSource])
-
   const bodyTopKpis = useMemo(() => {
-    // const total = source.length
-    // const tracked = source.filter(item => item['Detailed Industry'].trim() !== 'Undetermined').length
-    // const percentage = (!isNaN(tracked / total) ? (tracked / total) : 0) * 100
+    const total = filteredSource.length
+    const totalSalary = filteredSource.reduce((acc, cur) => acc + (cur['Base Salary'] ?? 0), 0)
+    const avgSalary = totalSalary / total
+    const salaries = filteredSource.map((item: any) => item['Base Salary']).filter(Boolean)
+    const min = formatCurrency(Math.min(...salaries))
+    const max = formatCurrency(Math.max(...salaries))
 
     return (
-      <div className="top-content flex space-x-4 h-24 items-center">
-        <div className="kpi-container w-46">
+      <>
+        <div className="kpi-container w-52">
           <HomeKpi title="Total Students" detail="2022 - Now">
             { Number(filteredSource.length).toLocaleString('en-US') }
           </HomeKpi>
         </div>
 
-        {/*<div className="kpi-container w-46">*/}
-        {/*  <HomeKpi title="% of tracked students" detail="2022 - Now" theme="light">*/}
-        {/*    { percentage.toFixed(1) }%*/}
-        {/*  </HomeKpi>*/}
-        {/*</div>*/}
-      </div>
+        <div className="kpi-container w-52">
+          <HomeKpi title="Salary Range" theme="light">
+            ${ Number(avgSalary.toFixed(2)).toLocaleString('en-US') }
+
+            <p className="text-white text-[10px] font-light mt-1">
+              Avg for selected period
+            </p>
+            <div className="min-max-salary-container flex mt-2 justify-between items-center">
+              <div className="left-content">
+                <p className="text-base">
+                  ${ min }
+                </p>
+                <p className="text-[10px] font-light">
+                  Min Salary
+                </p>
+              </div>
+              <div className="icon-container">
+                <ArrowSwapHorizontal size="18" color="white"/>
+              </div>
+              <div className="right-content">
+                <p className="text-base">
+                  ${ max }
+                </p>
+                <p className="text-[10px] font-light">
+                  Max Salary
+                </p>
+              </div>
+            </div>
+          </HomeKpi>
+        </div>
+      </>
     )
   }, [filteredSource])
 
@@ -189,117 +200,51 @@ const PostDocPage = () => {
     employerIndustry
   ])
 
-  const handleChordChartArcMouseEnter = (arc: any) => {
-    stackBarChartRef?.current?.highlightStack(arc.id)
-  }
-
-  const handleChordChartArcMouseLeave = (arc: any) => {
-    stackBarChartRef?.current?.downPlayStack(arc.id)
-  }
-
   return (
     <>
       <div className="rice-university-container w-full h-full relative">
-        <header className="header-container w-full bg-[#062FA8] h-14 items-center grid grid-cols-3 px-16 fixed top-0 z-20">
-          <div className="left-content flex items-center space-x-6">
-            <p className="text-white text-sm">
-              RICE HOME
-            </p>
-            <p className="text-white text-sm">
-              Contact Us
-            </p>
-            <p className="text-white text-sm">
-              RICE TV
-            </p>
+        <header className="header-container w-full bg-[#062FA8] h-14 flex items-center justify-between px-16 fixed top-0 z-20">
+          <div className="left-content">
+            <img src={riceMainLogo} alt="Rice University Logo" className="w-40"/>
           </div>
-          <div className="middle-content flex justify-center items-center">
-            <img src={riceWhiteLogo} alt="Rice University Logo" className="w-42"/>
-          </div>
+
           <div className="right-content flex justify-end space-x-12">
-            <div className="translation-container flex items-center space-x-2">
-              <p className="text-white text-sm">
-                Translate
-              </p>
-              <img src={spainFlag} alt="Spain Flag" className="h-4"/>
-            </div>
-
-            <div className="icons-container flex space-x-4 items-center">
-              <Messages3 size="24" color="white" variant="Bulk"/>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" clipRule="evenodd"
-                      d="M10.2 19.8C15.6124 19.8 20 15.4124 20 10C20 4.58762 15.6124 0.200012 10.2 0.200012C4.78761 0.200012 0.400024 4.58762 0.400024 10C0.400024 15.4124 4.78761 19.8 10.2 19.8ZM10.2 18.9833C15.1613 18.9833 19.1834 14.9614 19.1834 10C19.1834 5.03865 15.1613 1.01668 10.2 1.01668C5.23871 1.01668 1.21669 5.03865 1.21669 10C1.21669 14.9614 5.23871 18.9833 10.2 18.9833Z"
-                      fill="white"/>
-                <path
-                  d="M10.2004 1.8338V18.1658L10.1995 18.1668C5.68925 18.1668 2.03265 14.511 2.03247 10.0008C2.03247 5.49047 5.68914 1.8338 10.1995 1.8338H10.2004Z"
-                  fill="white"/>
-              </svg>
-              <Notification size="24" color="white" variant="Bulk"/>
-            </div>
-
             <div className="user-container flex items-center space-x-4">
               <p className="text-white text-sm">
                 Jese Leos
               </p>
               <div className="avatar">
                 <div className="w-8 rounded-full">
-                  <img src="https://img.daisyui.com/images/profile/demo/yellingcat@192.webp" alt="Avatar"/>
+                  <img src={riceOwl} alt="Avatar"/>
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        <AskToAiFrame opened={askToAiFrameOpened} onCloseClick={() => setAskToAiFrameOpened(false)} />
+        <AskToAiFrame opened={askToAiFrameOpened}
+                      filteredSource={filteredSource}
+                      onCloseClick={() => setAskToAiFrameOpened(false)} />
 
-        <div className="top-page-container h-20 bg-white flex items-center justify-between px-16 mt-14">
-          <div className="left-content">
-            <img src={riceBlueLogo} alt="Rice University Logo" className="w-56"/>
-          </div>
-          <div className="right-content flex items-center">
-            <HamburgerMenu size="24" color="#4B586E" className="cursor-pointer"/>
-            <div className="divider divider-horizontal "/>
-            <p className="text-sm text-[#4B586E] cursor-pointer">Apps</p>
-            <div className="divider divider-horizontal "/>
-            <p className="text-sm text-[#4B586E] cursor-pointer">Your Favorites</p>
-            <div className="divider divider-horizontal "/>
-            <p className="text-sm text-[#4B586E] cursor-pointer">About</p>
-          </div>
-        </div>
-
-        <div className="body-container px-16 py-12 relative">
+        <div className="body-container px-16 py-6 mt-14 relative">
           <div className="background-mask-container absolute inset-0 z-[-1]">
             <img src={mainBackground} alt="Main Background" className="h-full"/>
             <div className="mask-container absolute inset-0 bg-black opacity-80 mix-blend-difference"></div>
           </div>
 
           <div className="page-banner-container relative">
-            {/*<div className="page-selector-container flex items-center space-x-2 absolute top-0 right-0">*/}
-            {/*  <p className="text-white px-4 py-2 rounded-md text-sm cursor-pointer bg-[#1570EF]"*/}
-            {/*     onClick={() => {}}>*/}
-            {/*    Post-doc*/}
-            {/*  </p>*/}
-            {/*  <p className="text-white px-4 py-2 rounded-md text-sm cursor-pointer bg-[#1F2A37]"*/}
-            {/*     onClick={() => navigate('/alumni')}>*/}
-            {/*    Alumni*/}
-            {/*  </p>*/}
-            {/*</div>*/}
-
             <div className="text-container flex flex-col space-y-4">
-              <p className="text-6xl tracking-widest text-white">
-                WHAT WILL YOU DO WITH A <br/>
-                <span className="text-blue-500 font-semibold">RICE DEGREE?</span>
-              </p>
-              <p className="text-white tracking-tight leading-5">
-                The data visualized here represents alumni reported career fields matched with their corresponding RICE
-                degrees. Data was collected by our College Connections team through over 8,000 interviews of RICE alumni
-                with grad years spanning back to 1942. The visualization below represents a segment limited to graduates
-                from 1942–2021.
+              <p className="text-5xl text-white font-extralight">
+                WHAT WILL YOU DO WITH A&nbsp;
+                <span className="text-blue-500 font-semibold">RICE</span>&nbsp;
+                <span className="font-semibold">DEGREE?</span>
               </p>
             </div>
-            <div className="filters-container h-36 flex items-center justify-between">
+
+            <div className="filters-container h-28 flex items-center justify-between">
               <div className="custom-ask-input-container relative min-w-96 w-2/5">
                 <input type="text"
-                       placeholder="Feel free to ask me anything directly!"
+                       placeholder="RiceAI & FAQ"
                        onClick={() => setAskToAiFrameOpened(true)}
                        className="px-4 bg-white h-[60px] w-full rounded-full !outline-0 bg-gradient-to-r from-[#446deb] to-[#6f2899] placeholder:text-white"/>
                 <div className="icon-container absolute right-5 top-1/2 -translate-y-1/2">
@@ -377,44 +322,46 @@ const PostDocPage = () => {
             </div>
           </div>
 
-          <div className="view-type-selector-container flex items-center space-x-2">
-            {
-              [ViewType.CHORD_CHART, ViewType.SANKEY_CHART].map((type) => (
-                <p key={type}
-                   className={`text-white px-4 py-1.5 rounded-full text-xs cursor-pointer ${viewType === type ? 'bg-[#1570EF]' : 'bg-[#1F2A37]'} `}
-                   onClick={() => setViewType(type)}>
-                { type }
-                </p>
-              ))
-            }
+          <div className="view-type-selector-container flex flex-col space-y-2 absolute z-10">
+            <div className="title-container">
+              <p className="text-xs text-white">
+                Main Chart View
+              </p>
+            </div>
+            <div className="tips-container flex items-center space-x-2">
+              {
+                [ViewType.CHORD_CHART, ViewType.SANKEY_CHART].map((type) => (
+                  <p key={type}
+                     className={`text-white px-4 py-1.5 rounded-full text-xs cursor-pointer ${viewType === type ? 'bg-[#1570EF]' : 'bg-[#1F2A37]'} `}
+                     onClick={() => setViewType(type)}>
+                    { type }
+                  </p>
+                ))
+              }
+            </div>
           </div>
 
           {
             viewType === ViewType.CHORD_CHART && (
-              <div className="page-content w-full h-[640px] grid grid-cols-2 mt-4">
-                <div className="left-content">
-                  <ChordChart data={data}
-                              keys={keys}
-                              despisedKeys={despisedKeys}
-                              onArcMouseEnter={handleChordChartArcMouseEnter}
-                              onArcMouseLeave={handleChordChartArcMouseLeave}/>
+              <div className="page-content w-full h-[840px] flex items-center relative">
+                <div className="body-top-kpis-container absolute right-0 top-0 flex flex-col space-y-4">
+                  { bodyTopKpis}
                 </div>
-                <div className="right-content relative">
-                  { bodyTopKpis }
 
-                  <div className="chart-container h-full max-h-[calc(100%-6rem)]">
-                    { stackedBarChartNode }
-                  </div>
-                </div>
+                <ChordChart data={data}
+                            keys={keys}
+                            despisedKeys={despisedKeys} />
               </div>
             )
           }
           {
             viewType === ViewType.SANKEY_CHART && (
-              <div className="page-content w-full mt-4 flex flex-col items-end space-y-4">
-                { bodyTopKpis }
+              <div className="page-content w-full flex flex-col items-end space-y-4">
+                <div className="flex items-center space-x-4">
+                  { bodyTopKpis }
+                </div>
 
-                <div className="chart-container h-[540px] w-full">
+                <div className="chart-container h-[740px] w-full">
                   <PostDocSankeyChart data={filteredSource} />
                 </div>
               </div>
@@ -423,7 +370,10 @@ const PostDocPage = () => {
         </div>
 
         <div className="footer-container h-32 w-full bg-[#1f2a37] flex justify-between items-center px-16">
-          <div className="left-content flex flex-col space-y-2">
+          <div className="left-content">
+            <img src={riceWhiteLogo} alt="Rice University Logo" className="w-48"/>
+          </div>
+          <div className="right-content flex flex-col space-y-2">
             <div className="top-text-container flex items-center space-x-4">
               <p className="text-white text-xs cursor-pointer">
                 STUDENTS AND ALUMNI
@@ -439,14 +389,11 @@ const PostDocPage = () => {
               </p>
             </div>
             <div className="bottom-text-container">
-              <p className="text-white font-extralight text-[10px]">
+              <p className="text-white font-extralight text-[10px] text-right">
                 6100 Main St., Houston, TX 77005-1827| Mailing Address: P.O. Box 1892, Houston, TX 77251-1892 |
                 713-348-0000
               </p>
             </div>
-          </div>
-          <div className="right-content">
-            <img src={riceWhiteLogo} alt="Rice University Logo" className="w-48"/>
           </div>
         </div>
 

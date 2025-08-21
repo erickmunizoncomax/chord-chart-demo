@@ -5,7 +5,6 @@ import HomeKpi from '../../components/HomeKpi'
 import riceWhiteLogo from '../../assets/img/rice-university-white-logo.png'
 import spainFlag from '../../assets/img/spains-flag.png'
 import { HamburgerMenu, Messages3, Notification } from 'iconsax-reactjs'
-import AskToAiFrame from '../../components/AskToAiFrame'
 import riceBlueLogo from '../../assets/img/rice-university-blue-logo.png'
 import mainBackground from '../../assets/img/main-background.png'
 import { Select, SelectOption } from '../../components/Select'
@@ -47,7 +46,7 @@ const AlumniPage = () => {
 
   const [drillDownDimensionField, setDrillDownDimensionField] = useState<string>()
   const [drillDownContentOpened, setSetDrillDownContentOpened] = useState<boolean>(false)
-  const [askToAiFrameOpened, setAskToAiFrameOpened] = useState<boolean>(false)
+  const [_, setAskToAiFrameOpened] = useState<boolean>(false)
   const [viewType, setViewType] = useState<ViewType>(ViewType.CHORD_CHART)
   const [viewDataType, setViewDataType] = useState<ViewDataType>(ViewDataType.ALL)
 
@@ -233,7 +232,7 @@ const AlumniPage = () => {
           </div>
         </header>
 
-        <AskToAiFrame opened={askToAiFrameOpened} onCloseClick={() => setAskToAiFrameOpened(false)} />
+        {/*<AskToAiFrame opened={askToAiFrameOpened} onCloseClick={() => setAskToAiFrameOpened(false)} />*/}
 
         <div className="top-page-container h-20 bg-white flex items-center justify-between px-16 mt-14">
           <div className="left-content">

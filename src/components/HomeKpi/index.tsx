@@ -4,7 +4,7 @@ import tw from 'tailwind-styled-components'
 interface HomeKpiProps extends PropsWithChildren {
   theme?: 'dark' | 'light'
   title: string
-  detail: string
+  detail?: string
 }
 
 const BackgroundMaskContainer = tw.div<{ $theme: 'dark' | 'light' }>`
@@ -28,7 +28,7 @@ const HomeKpi: FC<HomeKpiProps> = (props) => {
         <BackgroundMaskContainer $theme={theme} />
         <p className="text-white text-xs font-light">{ title }</p>
         <p className="text-white text-3xl font-semibold leading-none">{ children }</p>
-        <p className="text-white text-[10px] font-light">{ detail }</p>
+        { detail && <p className="text-white text-[10px] font-light">{ detail }</p> }
       </div>
     </>
   )

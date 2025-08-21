@@ -1,14 +1,15 @@
 import type { FC } from 'react'
-import { colors, despisedColors } from '../../constants'
 import ReactECharts from 'echarts-for-react'
 
 interface SankeyChartProps {
   data: any[]
 }
 
-let majorsValues = 0
-let outcomesValues = 0
-let detailedIndustriesValues = 0
+const legendItems = [
+  { label: 'RICE Majors', color: '#018CFF' },
+  { label: 'Outcome (Industry)', color: '#BB57A9' },
+  { label: 'Detailed Outcome', color: '#10AD95' },
+]
 
 const buildSankeyData = (items: any[]) => {
   const safe = (v: any) => String(v ?? '').trim()
@@ -24,18 +25,17 @@ const buildSankeyData = (items: any[]) => {
   )
 
   const data = [
-    ...majors.map((name: string, i: number) => ({
+    ...majors.map((name: string) => ({
       name: `M$$$${name}`,
       itemStyle: {
-        color: colors[i % colors.length],
+        color: '#018CFF',
         borderRadius: 2,
       },
       label: {
         position: 'left',
         formatter: (params: any) => {
-          let n = params.name.replace('M$$$', '')
-          if (n.length > 20) n = `${n.substring(0, 20)}...`
-          majorsValues += params.value
+          const n = params.name.replace('M$$$', '')
+          // if (n.length > 20) n = `${n.substring(0, 20)}...`
           return [`{title|${n}}`, `{subtitle|${params.value}}`].join('\n')
         },
         rich: {
@@ -49,34 +49,30 @@ const buildSankeyData = (items: any[]) => {
     })),
 
     ...outcomes.map((name: string) => {
-      const idx = Math.floor(Math.random() * Math.max(despisedColors.length, 1))
-      const color = despisedColors[idx]
       return {
         name: `O$$$${name}`,
-        itemStyle: { color, borderRadius: 2 },
+        itemStyle: {
+          color: '#BB57A9',
+          borderRadius: 2
+        },
         label: {
           formatter: (params: any) => {
-            let n = params.name.replace('O$$$', '')
-            if (n.length > 20) n = `${n.substring(0, 20)}...`
-            outcomesValues += params.value
-            return n
+            return params.name.replace('O$$$', '')
           }
         }
       }
     }),
 
     ...detailedIndustries.map((name: string) => {
-      const idx = Math.floor(Math.random() * Math.max(despisedColors.length, 1))
-      const color = despisedColors[idx]
       return {
         name: `I$$$${name}`,
-        itemStyle: { color, borderRadius: 2 },
+        itemStyle: {
+          color: '#10AD95',
+          borderRadius: 2
+        },
         label: {
           formatter: (params: any) => {
-            let n = params.name.replace('I$$$', '')
-            if (n.length > 20) n = `${n.substring(0, 20)}...`
-            detailedIndustriesValues += params.value
-            return n
+            return params.name.replace('I$$$', '')
           }
         }
       }
@@ -132,7 +128,7 @@ const PostDocSankeyChart: FC<SankeyChartProps> = (props) => {
       {
         type: 'sankey',
         left: 150,
-        right: 150,
+        right: 250,
         top: 10,
         bottom: 10,
         nodeWidth: 16,
@@ -143,20 +139,31 @@ const PostDocSankeyChart: FC<SankeyChartProps> = (props) => {
         links,
         emphasis: { focus: 'adjacency' },
         lineStyle: {
-          color: 'source',
           curveness: 0.5,
-          opacity: 0.35
+          opacity: 0.35,
+          color: 'gradient'
         },
         label: { color: '#FFF' }
       }
     ]
   }
 
-  console.log(option)
-
   return (
     <>
-      <div className="sankey-chart-container h-full w-full">
+      <div className="sankey-chart-container h-full w-full flex flex-col space-y-8">
+        <div className="legend-container flex items-center space-x-4">
+          {
+            legendItems.map((item, index) => (
+              <div key={index}
+                   className="legend-item flex items-center space-x-2">
+                <div className="square-container h-4 w-4 rounded-sm" style={{ backgroundColor: item.color }} />
+                <p className="text-xs text-white">
+                  { item.label }
+                </p>
+              </div>
+            ))
+          }
+        </div>
         <ReactECharts option={option}
                       opts={{ devicePixelRatio: 2 }}
                       style={{ height: '100%' }} />
